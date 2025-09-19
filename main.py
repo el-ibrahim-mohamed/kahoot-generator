@@ -18,6 +18,8 @@ from PIL import Image
 import io
 import traceback
 import time
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 
 # Step 2: Configuring the Streamlit app
 st.set_page_config(
@@ -290,9 +292,20 @@ def create_kahoot_quiz(quiz_data: dict, kahoot_email: str, kahoot_password: str)
     
 
     # Step 2: Setting up the Selenium WebDriver
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)
-    driver.maximize_window()
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")        # Run headless
+    chrome_options.add_argument("--no-sandbox")          # Required for containers
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Prevent crash on limited resources
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--window-size=1920,1080")
+
+    # Use system-installed Chromium + Chromedriver (from packages.txt)
+    chrome_options.binary_location = "/usr/bin/chromium"
+    service = Service("/usr/bin/chromedriver")
+
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+
 
 
     # Step 3: Navigating to Kahoot Login Page and Logging In
