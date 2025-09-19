@@ -10,6 +10,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import StaleElementReferenceException
 from serpapi import GoogleSearch
@@ -18,7 +20,6 @@ from PIL import Image
 import io
 import traceback
 import time
-from selenium.webdriver.chrome.service import Service
 
 # Step 2: Configuring the Streamlit app
 st.set_page_config(
@@ -299,12 +300,27 @@ def create_kahoot_quiz(quiz_data: dict, kahoot_email: str, kahoot_password: str)
             temp_path = tmp.name
 
         return temp_path
-    
 
-    # Step 2: Setting up the Selenium WebDriver
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)
+
+    # Step 2: Setting Up Selenium
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--window-size=1920,1080")
+
+    # Path where Streamlit Cloud installs them
+    CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
+    CHROME_BINARY = "/usr/bin/chromium"
+
+    chrome_options.binary_location = CHROME_BINARY
+    service = Service(CHROMEDRIVER_PATH)
+
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.maximize_window()
+
 
     # Step 3: Navigating to Kahoot Login Page and Logging In
     driver.get("https://create.kahoot.it/auth/login")
@@ -321,7 +337,7 @@ def create_kahoot_quiz(quiz_data: dict, kahoot_email: str, kahoot_password: str)
     wait_and_click(driver, By.ID, "login-submit-btn")
 
     try:
-        error_span = WebDriverWait(driver, 4).until(
+        WebDriverWait(driver, 4).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "span.error-message__ErrorMessageComponent-sc-sut6rh-0"))
         )
         return False, "Invalid username, email, or password."
