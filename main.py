@@ -303,6 +303,16 @@ def create_kahoot_quiz(quiz_data: dict, kahoot_email: str, kahoot_password: str)
 
 
     # Step 2: Setting Up Selenium
+    import shutil, subprocess
+
+    print("chromium:", shutil.which("chromium") or shutil.which("chromium-browser"))
+    print("chromedriver:", shutil.which("chromedriver"))
+
+    if shutil.which("chromium"):
+        print(subprocess.run([shutil.which("chromium"), "--version"], capture_output=True, text=True).stdout)
+    if shutil.which("chromedriver"):
+        print(subprocess.run([shutil.which("chromedriver"), "--version"], capture_output=True, text=True).stdout)
+
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
