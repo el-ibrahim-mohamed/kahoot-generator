@@ -1,0 +1,7 @@
+streamlit
+google-genai
+selenium
+webdriver-manager
+serpapi
+requests
+pillow
