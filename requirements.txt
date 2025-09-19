@@ -2,6 +2,6 @@ streamlit
 google-genai
 selenium
 webdriver-manager
-serpapi
+google-search-results
 requests
 pillow
