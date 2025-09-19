@@ -20,6 +20,7 @@ import traceback
 import time
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+import os
 
 # Step 2: Configuring the Streamlit app
 st.set_page_config(
@@ -291,20 +292,26 @@ def create_kahoot_quiz(quiz_data: dict, kahoot_email: str, kahoot_password: str)
         return temp_path
     
 
-    # Step 2: Setting up the Selenium WebDriver
+    # Step 2: Setting Up Selenium Driver
+
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")        # Run headless
-    chrome_options.add_argument("--no-sandbox")          # Required for containers
-    chrome_options.add_argument("--disable-dev-shm-usage")  # Prevent crash on limited resources
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--disable-software-rasterizer")
     chrome_options.add_argument("--window-size=1920,1080")
 
-    # Use system-installed Chromium + Chromedriver (from packages.txt)
-    chrome_options.binary_location = "/usr/bin/chromium"
-    service = Service("/usr/bin/chromedriver")
+    # Some builds use /usr/bin/chromium-browser instead of /usr/bin/chromium
+    for path in ["/usr/bin/chromium", "/usr/bin/chromium-browser"]:
+        if os.path.exists(path):
+            chrome_options.binary_location = path
+            break
 
+    service = Service("/usr/bin/chromedriver")
     driver = webdriver.Chrome(service=service, options=chrome_options)
+
 
 
 
