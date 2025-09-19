@@ -485,7 +485,8 @@ elif st.session_state.quiz_inputs:
         st.error("An error occured while generating the quiz data! Please try again later.")
         st.session_state.quiz_inputs = []
         st.session_state.quiz_data = None
-        traceback.print_exc()
+        error_text = traceback.format_exc()
+        st.error("An error occurred:")
         st.rerun()
 
 
