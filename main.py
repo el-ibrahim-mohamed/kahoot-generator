@@ -69,7 +69,7 @@ gemini_supported_languages = [
     "Arabic", "Bengali", "Bulgarian",
     "Chinese (simplified)", "Chinese (traditional)",
     "Croatian", "Czech", "Danish",
-    "Dutch", "English", "Estonian",
+    "Dutch", "Deutsch", "English", "Estonian",
     "Finnish", "French", "German",
     "Greek", "Hebrew", "Hindi",
     "Hungarian", "Indonesian", "Italian",
