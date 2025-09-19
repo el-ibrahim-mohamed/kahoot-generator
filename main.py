@@ -19,8 +19,6 @@ import io
 import traceback
 import time
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-import os
 
 # Step 2: Configuring the Streamlit app
 st.set_page_config(
@@ -202,13 +200,24 @@ Notes:
 """
     # Generating the quiz data
     with st.spinner("Generating your quiz questions..."):
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=[prompt, *uploaded_files],
-            config={
-                "response_mime_type": "application/json"
-            },
-        )
+        gemini_model = "gemini-2.5-flash-lite"
+        try:
+            response = client.models.generate_content(
+                model=gemini_model,
+                contents=[prompt, *uploaded_files],
+                config={
+                    "response_mime_type": "application/json"
+                },
+            )
+        except:
+            gemini_model = "gemini-2.0-flash"
+            response = client.models.generate_content(
+                model=gemini_model,
+                contents=[prompt, *uploaded_files],
+                config={
+                    "response_mime_type": "application/json"
+                },
+            )
 
     quiz_data = response.text
     quiz_data = quiz_data.replace("```json", "")
@@ -292,28 +301,10 @@ def create_kahoot_quiz(quiz_data: dict, kahoot_email: str, kahoot_password: str)
         return temp_path
     
 
-    # Step 2: Setting Up Selenium Driver
-
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--remote-debugging-port=9222")
-    chrome_options.add_argument("--disable-software-rasterizer")
-    chrome_options.add_argument("--window-size=1920,1080")
-
-    # Some builds use /usr/bin/chromium-browser instead of /usr/bin/chromium
-    for path in ["/usr/bin/chromium", "/usr/bin/chromium-browser"]:
-        if os.path.exists(path):
-            chrome_options.binary_location = path
-            break
-
-    service = Service("/usr/bin/chromedriver")
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-
-
-
+    # Step 2: Setting up the Selenium WebDriver
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service)
+    driver.maximize_window()
 
     # Step 3: Navigating to Kahoot Login Page and Logging In
     driver.get("https://create.kahoot.it/auth/login")
@@ -395,7 +386,7 @@ def create_kahoot_quiz(quiz_data: dict, kahoot_email: str, kahoot_password: str)
         question_box.send_keys(question["question"])
 
         # Image
-        if question["image"]:
+        if question.get("image"):
             wait_and_click(driver, By.CLASS_NAME, "MUmzd") # Clicking the upload file button
             wait_and_send_keys(driver, By.CSS_SELECTOR, "[data-functional-selector='media-upload-dialog__upload-media-input']", get_image(question["image"]))
 
@@ -466,7 +457,7 @@ if st.session_state.result_link:
     st.write(f"**Kahoot Link**: {st.session_state.result_link}")
     st.write("**You can also view and edit your Kahoot from your Kahoot account.**")
 
-    if st.button("Create New Kahoot", use_container_width=True):
+    if st.button("Create New Kahoot", type="primary", use_container_width=True):
         st.session_state.quiz_inputs = []
         st.session_state.quiz_data = None
         st.session_state.create_kahoot_clicked = False
@@ -485,9 +476,14 @@ elif st.session_state.quiz_inputs:
         st.error("An error occured while generating the quiz data! Please try again later.")
         st.session_state.quiz_inputs = []
         st.session_state.quiz_data = None
+
         error_text = traceback.format_exc()
-        st.error("An error occurred:")
-        st.rerun()
+        st.error(error_text)
+
+        if st.button("Try Again", use_container_width=True):
+            st.rerun()
+        
+        st.stop()
 
 
     # Adding the quiz title, description and time limit to the JSON data
@@ -530,22 +526,25 @@ elif st.session_state.quiz_inputs:
         if st.button("Create", type="primary", use_container_width=True, key="create_kahoot_final_button"):
 
             if kahoot_email and kahoot_password:
-                try:
-                    with st.spinner("Creating your Kahoot...", show_time=True):
-                        success, data = create_kahoot_quiz(quiz_data, kahoot_email, kahoot_password)
+                # try:
+                with st.spinner("Creating your Kahoot...", show_time=True):
+                    eta_time = 43 + 5 * len(quiz_data["questions"])
+                    st.write(f"**ETA: {eta_time} seconds**")
+                    success, data = create_kahoot_quiz(quiz_data, kahoot_email, kahoot_password)
 
-                    if success:
-                        st.session_state.result_link = data
-                        st.rerun()
+                if success:
+                    st.session_state.result_link = data
+                    st.rerun()
 
-                    else:
-                        st.error(data)
-                        st.stop()
-
-                except Exception as e:
-                    st.error("An error occured while creating the Kahoot! Please try again later.")
-                    st.error(e)
+                else:
+                    st.error(data)
                     st.stop()
+
+                # except Exception as e:
+                #     st.error("An error occured while creating the Kahoot! Please try again later.")
+                #     full_err = traceback.format_exc()
+                #     st.error(full_err)
+                #     st.stop()
 
             else:
                 st.error("Please enter your Kahoot email and password.")
