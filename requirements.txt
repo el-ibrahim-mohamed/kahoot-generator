@@ -1,6 +1,7 @@
 streamlit
 google-genai
 selenium
+seleniumbase
 webdriver-manager
 google-search-results
 requests
